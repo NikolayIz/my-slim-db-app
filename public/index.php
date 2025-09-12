@@ -1,5 +1,7 @@
 <?php
 
+require __DIR__ . '/../vendor/autoload.php';
+
 $container = new Container();
 
 $container->set(\PDO::class, function () {
