@@ -14,7 +14,7 @@ session_start();
 $container = new Container();
 
 $container->set(\PDO::class, function () {
-    $conn = new \PDO('sqlite:' . __DIR__ . '/../var/database.sqlite');
+    $conn = new \PDO('sqlite:' . __DIR__ . '/../tmp/database.sqlite');
     $conn->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
     return $conn;
 });
