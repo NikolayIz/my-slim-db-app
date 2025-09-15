@@ -1,7 +1,7 @@
-PORT ?= 8000
+PORT ?= 8080
 
 start:
-	php -S 0.0.0.0:$(PORT) -t public public/index.php
+	php -S localhost:$(PORT) -t public public/index.php
 
 setup:
 	composer install
