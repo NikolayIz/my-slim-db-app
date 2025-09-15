@@ -9,6 +9,8 @@ use Slim\Factory\AppFactory;
 use DI\Container;
 use Slim\Middleware\MethodOverrideMiddleware;
 
+session_start();
+
 $container = new Container();
 
 $container->set(\PDO::class, function () {
@@ -36,6 +38,8 @@ $app = AppFactory::createFromContainer($container);
 $app->add(MethodOverrideMiddleware::class);
 $app->addErrorMiddleware(true, true, true);
 
+$router = $app->getRouteCollector()->getRouteParser();
+
 $app->get('/cars', function ($request, $response) {
     $carRepository = $this->get(CarRepository::class);
     $cars = $carRepository->getEntities();
@@ -50,11 +54,7 @@ $app->get('/cars', function ($request, $response) {
       return $this->get('renderer')->render($response, 'cars/index.phtml', $params);
 })->setName('cars.index');
 
-$app->get('/cars/{id}', function ($request, $response, $args) {
-
-})->setName('cars.show');
-
-$app->get('/cars/{id}', function ($request, $response, $args) {
+$app->get('/cars/{id:[0-9]+}', function ($request, $response, $args) {
     $carRepository = $this->get(CarRepository::class);
     $id = $args['id'];
     $car = $carRepository->find($id);
@@ -103,3 +103,63 @@ $app->post('/cars', function ($request, $response) use ($router) {
 
     return $this->get('renderer')->render($response->withStatus(422), 'cars/new.phtml', $params);
 })->setName('cars.store');
+
+$app->get('/cars/{id}/edit', function ($request, $response, $args) {
+    $carRepository = $this->get(CarRepository::class);
+    $messages = $this->get('flash')->getMessages();
+    $id = $args['id'];
+    $car = $carRepository->find($id);
+
+    $params = [
+        'car' => $car,
+        'errors' => [],
+        'flash' => $messages
+    ];
+
+    return $this->get('renderer')->render($response, 'cars/edit.phtml', $params);
+})->setName('cars.edit');
+
+$app->patch('/cars/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
+    $carRepository = $this->get(CarRepository::class);
+    $id = $args['id'];
+    $car = $carRepository->find($id);
+
+    if (is_null($car)) {
+        return $response->write('Page not found')->withStatus(404);
+    }
+
+    $carData = $request->getParsedBodyParam('car');
+    $validator = new CarValidator();
+    $errors = $validator->validate($carData);
+
+    if (count($errors) === 0) {
+        $car->setMake($carData['make']);
+        $car->setModel($carData['model']);
+        $carRepository->save($car);
+        $this->get('flash')->addMessage('success', "Car was updated succesfully");
+        return $response->withRedirect($router->urlFor('cars.show', $args));
+    }
+
+    $params = [
+        'car' => $carData,
+        'errors' => $errors
+    ];
+
+    return $this->get('renderer')->render($response->withStatus(422), 'cars/edit.phtml', $params);
+});
+
+$app->delete('/cars/{id:[0-9]+}', function ($request, $response, $args) use ($router) {
+    $carRepository = $this->get(CarRepository::class);
+    $id = $args['id'];
+    $car = $carRepository->find($id);
+
+    if (is_null($car)) {
+        return $response->write('Car not found')->withStatus(404);
+    }
+
+    $carRepository->delete($car);
+    $this->get('flash')->addMessage('success', 'Car was removed successfully');
+    return $response->withRedirect($router->urlFor('cars.index'));
+});
+
+$app->run();

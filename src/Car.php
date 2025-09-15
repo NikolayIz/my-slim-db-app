@@ -10,7 +10,7 @@ class Car
 
     public static function fromArray(array $carData): Car
     {
-        [$make, $model] = $carData;
+        [$make, $model] = $carData; // ['make' => $make, 'model' => $model]
         $car = new Car();
         $car->setMake($make);
         $car->setModel($model);
@@ -42,7 +42,7 @@ class Car
         $this->make = $make;
     }
 
-    public function setId(string $model): void
+    public function setModel(string $model): void
     {
         $this->model = $model;
     }

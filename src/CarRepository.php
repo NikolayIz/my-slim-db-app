@@ -18,14 +18,14 @@ class CarRepository
         $stmt = $this->conn->query($sql);
         
         while ($row = $stmt->fetch()) {
-            $car = Car::fromArray($row['make'], $row['model']);
+            $car = Car::fromArray([$row['make'], $row['model']]);
             $car->setId($row['id']);
             $cars[] = $car;
         }
         return $cars;
     }
 
-    public function find(ind $id): ?Car
+    public function find(int $id): ?Car
     {
         $sql = "SELECT * FROM cars WHERE id = ?";
         $stmt = $this->conn->prepare($sql);
